@@ -1,0 +1,2 @@
+D:\App\GameStoreAsp\GameStore.UnitTests\obj\Debug\GameStore.UnitTests.csprojAssemblyReference.cache
+D:\App\GameStoreAsp\GameStore.UnitTests\obj\Debug\GameStore.UnitTests.csproj.CoreCompileInputs.cache
