@@ -1,4 +1,5 @@
 ﻿using GameStore.Domain.Abstract;
+using GameStore.Domain.Entities;
 using GameStore.WebUI.Models;
 using System.Linq;
 using System.Web.Mvc;
@@ -10,7 +11,7 @@ namespace GameStore.WebUI.Controllers
     /// </summary>
     public class GameController : Controller
     {
-        private IGameRepository repository;
+        private readonly IGameRepository repository;
         /// <summary>
         /// Количество товаров на странице.
         /// </summary>
@@ -49,6 +50,26 @@ namespace GameStore.WebUI.Controllers
                 CurrentCategory = category
             };
             return View(model);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="gameId"></param>
+        /// <returns></returns>
+        public FileContentResult GetImage(int gameId)
+        {
+            Game game = repository.Games
+                .FirstOrDefault(g => g.GameId == gameId);
+
+            if (game != null)
+            {
+                return File(game.ImageData, game.ImageMimeType);
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

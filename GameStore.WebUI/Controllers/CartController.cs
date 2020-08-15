@@ -12,29 +12,32 @@ namespace GameStore.WebUI.Controllers
     public class CartController : Controller
     {
         private IGameRepository repository;
+        private IOrderProcessor orderProcessor;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="repo"></param>
+        public CartController(IGameRepository repo, IOrderProcessor processor)
+        {
+            repository = repo;
+            orderProcessor = processor;
+        }
+
 
         /// <summary>
         /// Метод для отображения содержимого Cart
         /// </summary>
         /// <param name="returnUrl"></param>
         /// <returns></returns>
-        public ViewResult Index(string returnUrl)
+        public ViewResult Index(Cart cart, string returnUrl)
         {
             return View(new CartIndexViewModel
             {
-                Cart = GetCart(),
+                Cart = cart,
                 ReturnUrl = returnUrl
             });
         }
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="repo"></param>
-        public CartController(IGameRepository repo)
-        {
-            repository = repo;
-        }
 
         /// <summary>
         /// Метод
@@ -42,14 +45,14 @@ namespace GameStore.WebUI.Controllers
         /// <param name="gameId"></param>
         /// <param name="returnUrl"></param>
         /// <returns></returns>
-        public RedirectToRouteResult AddToCart(int gameId, string returnUrl)
+        public RedirectToRouteResult AddToCart(Cart cart, int gameId, string returnUrl)
         {
             Game game = repository.Games
                 .FirstOrDefault(g => g.GameId == gameId);
 
             if (game != null)
             {
-                GetCart().AddItem(game, 1);
+                cart.AddItem(game, 1);
             }
             return RedirectToAction("Index", new { returnUrl });
         }
@@ -60,31 +63,63 @@ namespace GameStore.WebUI.Controllers
         /// <param name="gameId"></param>
         /// <param name="returnUrl"></param>
         /// <returns></returns>
-        public RedirectToRouteResult RemoveFromCart(int gameId, string returnUrl)
+        public RedirectToRouteResult RemoveFromCart(Cart cart, int gameId, string returnUrl)
         {
             Game game = repository.Games
                 .FirstOrDefault(g => g.GameId == gameId);
 
             if (game != null)
             {
-                GetCart().RemoveLine(game);
+                cart.RemoveLine(game);
             }
             return RedirectToAction("Index", new { returnUrl });
         }
 
         /// <summary>
-        /// Метод для сохранения и извлечения объектов Cart применяется средство состояния сеанса ASP.NET.
+        /// Метод визиализирующий представление отображающие информацию корзины.
         /// </summary>
+        /// <param name="cart"></param>
         /// <returns></returns>
-        public Cart GetCart()
+        public PartialViewResult Summary(Cart cart)
         {
-            Cart cart = (Cart)Session["Cart"];
-            if (cart == null)
+            return PartialView(cart);
+        }
+
+        /// <summary>
+        /// Метод возвращает стандартное представление, передавая ему новый объект ShippingDetails в качестве модели представления.
+        /// </summary>
+        /// <param name="cart"></param>
+        /// <param name="shippingDetails"></param>
+        /// <returns></returns>
+        public ViewResult Checkout()
+        {
+            return View(new ShippingDetails());
+        }
+
+        /// <summary>
+        /// Метод для запроса POST
+        /// </summary>
+        /// <param name="cart"></param>
+        /// <param name="shippingDetails"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public ViewResult Checkout(Cart cart, ShippingDetails shippingDetails)
+        {
+            if (cart.Lines.Count() == 0)
             {
-                cart = new Cart();
-                Session["Cart"] = cart;
+                ModelState.AddModelError("", "Извините, ваша корзина пуста!");
             }
-            return cart;
+
+            if (ModelState.IsValid)
+            {
+                orderProcessor.ProcessOrder(cart, shippingDetails);
+                cart.Clear();
+                return View("Completed");
+            }
+            else
+            {
+                return View(shippingDetails);
+            }
         }
     }
 }

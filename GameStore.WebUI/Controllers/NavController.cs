@@ -20,13 +20,14 @@ namespace GameStore.WebUI.Controllers
         {
             repository = repo;
         }
-
+        
         /// <summary>
         /// Метод который использует запрос LINQ для получения списка категорий из хранилища и передачи их представлению.
         /// </summary>
         /// <param name="category"></param>
+        /// <param name="horizontalNav"></param>
         /// <returns></returns>
-        public PartialViewResult Menu(string category = null)
+        public PartialViewResult Menu(string category = null, bool horizontalNav = false)
         {
             ViewBag.SelectedCategory = category;
 
@@ -34,7 +35,8 @@ namespace GameStore.WebUI.Controllers
                 .Select(game => game.Category)
                 .Distinct()
                 .OrderBy(x => x);
-            return PartialView(categories);
+
+            return PartialView("FlexMenu", categories);
         }
     }
 }
